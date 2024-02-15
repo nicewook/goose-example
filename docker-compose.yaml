@@ -1,0 +1,17 @@
+version: '3.1'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: goosedb
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d # 초기 실행 스크립트 위치
+    restart: unless-stopped # 컨테이너 재시작 정책: 사용자가 중지시키지 않는 한 재시작
