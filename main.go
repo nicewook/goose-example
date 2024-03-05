@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"runtime"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pressly/goose/v3"
@@ -15,6 +16,15 @@ import (
 var migrationsFS embed.FS
 
 func main() {
+	if runtime.GOOS == "darwin" {
+		fmt.Println("이 프로그램은 macOS에서 실행 중입니다. 데이터베이스 마이그레이션을 실행하지 않습니다.")
+	} else {
+		fmt.Println("이 프로그램은 macOS가 아닌 다른 OS에서 실행 중입니다. 데이터베이스 마이그레이션을 실행합니다.")
+		dbMigration()
+	}
+}
+
+func dbMigration() {
 	// 데이터베이스 연결 설정
 	dsn := "myuser:mypassword@tcp(127.0.0.1:3306)/goosedb?parseTime=true"
 	db, err := sql.Open("mysql", dsn)
@@ -33,6 +43,12 @@ func main() {
 	goose.SetDialect("mysql")
 	goose.SetBaseFS(migrationsFS)
 
+	fmt.Println("Migration status:")
+	if err := goose.Status(db, "db/migrations"); err != nil {
+		log.Fatalf("goose status failed: %v", err)
+	}
+
+	fmt.Println("Migrating...")
 	// 마이그레이션 실행
 	if err := goose.Up(db, "db/migrations"); err != nil {
 		log.Fatalf("goose up failed: %v", err)
