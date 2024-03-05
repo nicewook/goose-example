@@ -1,4 +1,4 @@
-name: Custom Labeler with GH CLI
+name: Pull Request Labeler
 
 on:
   pull_request:
@@ -36,3 +36,12 @@ jobs:
       - name: Label deleted files
         if: steps.files.outputs.deleted == 'true'
         run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-deleted"
+
+  auto-labeler:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto Labeler
+        id: labeler
+        uses: jimschubert/labeler-action@v2
+        with:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

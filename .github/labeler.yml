@@ -1,0 +1,32 @@
+enable:
+  issues: false
+  prs: true
+
+labels:
+  'bug':
+    include:
+      - '\bbug\b'
+  'fix':
+    include:
+      - '\bbug\b'
+  'build':
+    include:
+      - '\bbuild\b'
+  'doc':
+    include:
+      - '\bdocs\b'
+  'feat':
+    include:
+      - '\bfeature\b'
+  'refactoring':
+    include:
+      - '\brefactor\b'
+  'refactor':
+    include:
+      - '\brefactor\b'
+  'test':
+    include:
+      - '\btest\b'
+  'performance':
+    include:
+    - '\bperformance\b'
