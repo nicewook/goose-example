@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS user
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
--- 제품 테이블 생성
+-- 제품 테이블 생성 - test
 CREATE TABLE IF NOT EXISTS product
 (
     id             INT AUTO_INCREMENT PRIMARY KEY,
