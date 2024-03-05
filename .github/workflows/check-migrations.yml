@@ -11,23 +11,32 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: 'develop'  # 또는 merge된 대상 브랜치명을 사용하세요.
+          ref: 'develop'  # Use the target branch name of the merge here.
 
       - name: Find the latest existing migration timestamp
         run: |
+          echo "Starting to find the latest existing migration timestamp..."
           LATEST_TIMESTAMP=$(ls ./db/migrations/*.sql | xargs -n1 basename | sed 's/\([0-9]\+\).*/\1/' | sort -nr | head -n1)
           echo "The latest existing migration timestamp is $LATEST_TIMESTAMP"
+          echo "Setting LATEST_TIMESTAMP environment variable..."
           echo "LATEST_TIMESTAMP=$LATEST_TIMESTAMP" >> $GITHUB_ENV
 
       - name: Fetch PR commits to find new migrations
         run: |
+          echo "Fetching PR commits to find new migration files..."
           git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
           git checkout FETCH_HEAD
+          echo "Checking for new migration files in the merged PR..."
           NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} FETCH_HEAD ./db/migrations | xargs -n1 basename)
-          echo "New migration files from the merged PR: $NEW_FILES"
+          if [[ -z "$NEW_FILES" ]]; then
+            echo "No new migration files found in the PR."
+          else
+            echo "New migration files from the merged PR: $NEW_FILES"
+          fi
 
       - name: Check new migration files timestamp
         run: |
+          echo "Checking timestamps of new migration files..."
           for FILE in $NEW_FILES; do
             NEW_TIMESTAMP=$(echo $FILE | sed 's/\([0-9]\+\).*/\1/')
             if [[ $NEW_TIMESTAMP -le $LATEST_TIMESTAMP ]]; then
@@ -35,6 +44,6 @@ jobs:
               echo "The new migration timestamp must be later than $LATEST_TIMESTAMP."
               exit 1
             else
-              echo "Validation passed for $FILE"
+              echo "Validation passed for $FILE with timestamp $NEW_TIMESTAMP."
             fi
           done
