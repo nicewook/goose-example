@@ -1,49 +1,40 @@
-name: Check Migrations After Merge
+name: Check SQL Migrations Timestamp
 
 on:
-  pull_request_target:
-    types: [closed]
+  pull_request:
+    branches:
+      - develop
 
 jobs:
-  check-timestamp-after-merge:
+  check-migration-timestamp:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
         with:
-          ref: 'develop'  # Use the target branch name of the merge here.
+          ref: develop
 
-      - name: Find the latest existing migration timestamp
+      - name: Find latest timestamp in develop
+        id: develop_timestamp
         run: |
-          echo "Starting to find the latest existing migration timestamp..."
-          LATEST_TIMESTAMP=$(ls ./db/migrations/*.sql | xargs -n1 basename | sed 's/\([0-9]\+\).*/\1/' | sort -nr | head -n1)
-          echo "The latest existing migration timestamp is $LATEST_TIMESTAMP"
-          echo "Setting LATEST_TIMESTAMP environment variable..."
-          echo "LATEST_TIMESTAMP=$LATEST_TIMESTAMP" >> $GITHUB_ENV
+          LATEST_MERGED_TIMESTAMP=$(git ls-files db/migrations/*.sql | xargs -I {} basename {} | cut -d '_' -f 1 | sort -n | tail -n 1)
+          echo "Latest merged timestamp in develop: $LATEST_MERGED_TIMESTAMP"
+          echo "::set-output name=timestamp::$LATEST_MERGED_TIMESTAMP"
 
-      - name: Fetch PR commits to find new migrations
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Check PR migration timestamps
         run: |
-          echo "Fetching PR commits to find new migration files..."
-          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
-          git checkout FETCH_HEAD
-          echo "Checking for new migration files in the merged PR..."
-          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} FETCH_HEAD ./db/migrations | xargs -n1 basename)
-          if [[ -z "$NEW_FILES" ]]; then
-            echo "No new migration files found in the PR."
+          PR_EARLIEST_TIMESTAMP=$(git diff --name-only ${{ github.base_ref }}...${{ github.head_ref }} | grep 'db/migrations/.*\.sql' | xargs -I {} basename {} | cut -d '_' -f 1 | sort -n | head -n 1)
+          
+          if [[ ! -z "$PR_EARLIEST_TIMESTAMP" && "$PR_EARLIEST_TIMESTAMP" -le "${{ steps.develop_timestamp.outputs.timestamp }}" ]]; then
+            echo "A more recent migration file already exists in the develop branch. Please update your migration file timestamp."
+            echo "PR earliest timestamp: $PR_EARLIEST_TIMESTAMP"
+            echo "Latest merged timestamp in develop: ${{ steps.develop_timestamp.outputs.timestamp }}"
+            exit 1
           else
-            echo "New migration files from the merged PR: $NEW_FILES"
+            echo "PR migration timestamp is valid."
           fi
-
-      - name: Check new migration files timestamp
-        run: |
-          echo "Checking timestamps of new migration files..."
-          for FILE in $NEW_FILES; do
-            NEW_TIMESTAMP=$(echo $FILE | sed 's/\([0-9]\+\).*/\1/')
-            if [[ $NEW_TIMESTAMP -le $LATEST_TIMESTAMP ]]; then
-              echo "Error: New migration file $FILE has a timestamp not later than the latest existing migration."
-              echo "The new migration timestamp must be later than $LATEST_TIMESTAMP."
-              exit 1
-            else
-              echo "Validation passed for $FILE with timestamp $NEW_TIMESTAMP."
-            fi
-          done
