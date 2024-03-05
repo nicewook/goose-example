@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: 'main'  # 또는 merge된 대상 브랜치명을 사용하세요.
+          ref: 'develop'  # 또는 merge된 대상 브랜치명을 사용하세요.
 
       - name: Find the latest existing migration timestamp
         run: |
