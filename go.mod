@@ -1,4 +1,4 @@
-module goose-example
+module github.com/nicewook/goose-example
 
 go 1.22.0
 
