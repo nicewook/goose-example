@@ -1,32 +1,40 @@
-name: Check New Migration Timestamps
+name: Check Migrations After Merge
 
 on:
-  pull_request:
-    branches:
-      - develop
+  pull_request_target:
+    types: [closed]
 
 jobs:
-  check-timestamp:
+  check-timestamp-after-merge:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: 'main'  # 또는 merge된 대상 브랜치명을 사용하세요.
 
       - name: Find the latest existing migration timestamp
-        id: latest-timestamp
         run: |
           LATEST_TIMESTAMP=$(ls ./db/migrations/*.sql | xargs -n1 basename | sed 's/\([0-9]\+\).*/\1/' | sort -nr | head -n1)
           echo "The latest existing migration timestamp is $LATEST_TIMESTAMP"
           echo "LATEST_TIMESTAMP=$LATEST_TIMESTAMP" >> $GITHUB_ENV
 
+      - name: Fetch PR commits to find new migrations
+        run: |
+          git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge
+          git checkout FETCH_HEAD
+          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} FETCH_HEAD ./db/migrations | xargs -n1 basename)
+          echo "New migration files from the merged PR: $NEW_FILES"
+
       - name: Check new migration files timestamp
         run: |
-          NEW_FILES=$(git diff --name-only --diff-filter=A ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} ./db/migrations | xargs -n1 basename)
           for FILE in $NEW_FILES; do
             NEW_TIMESTAMP=$(echo $FILE | sed 's/\([0-9]\+\).*/\1/')
             if [[ $NEW_TIMESTAMP -le $LATEST_TIMESTAMP ]]; then
               echo "Error: New migration file $FILE has a timestamp not later than the latest existing migration."
               echo "The new migration timestamp must be later than $LATEST_TIMESTAMP."
               exit 1
+            else
+              echo "Validation passed for $FILE"
             fi
           done
-          echo "All new migration files have valid timestamps."
