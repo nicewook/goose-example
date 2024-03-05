@@ -6,21 +6,16 @@ labels:
   'bug':
     include:
       - '\bbug\b'
-  'fix':
-    include:
-      - '\bbug\b'
+      - '\bfix\b'
   'build':
     include:
       - '\bbuild\b'
   'doc':
     include:
       - '\bdocs\b'
-  'feat':
+  'feature':
     include:
-      - '\bfeature\b'
-  'refactoring':
-    include:
-      - '\brefactor\b'
+      - '\bfeat\b'
   'refactor':
     include:
       - '\brefactor\b'
