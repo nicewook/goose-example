@@ -7,24 +7,32 @@ on:
 jobs:
   label-changes:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get changed files
+      - name: Get Added files
         id: files
-        uses: lots0logs/gh-action-get-changed-files@2.2.2
+        uses: dorny/paths-filter@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          filters:
+            added:
+              - added: 'db/migrations/**/*.sql'
+            modified:
+              - modified: 'db/migrations/**/*.sql'
+            deleted:
+              - deleted: 'db/migrations/**/*.sql'
 
       - name: Label added files
-        if: steps.files.outputs.added != ''
+        if: steps.files.outputs.added == 'true'
         run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-added"
 
       - name: Label modified files
-        if: steps.files.outputs.modified != '' || steps.files.outputs.renamed != ''
+        if: steps.files.outputs.modified == 'true'
         run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-modified"
 
-      - name: Label removed files
-        if: steps.files.outputs.removed != ''
+      - name: Label deleted files
+        if: steps.files.outputs.deleted == 'true'
         run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-deleted"
