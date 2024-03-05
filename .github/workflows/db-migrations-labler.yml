@@ -1,0 +1,30 @@
+name: Custom Labeler with GH CLI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: files
+        uses: lots0logs/gh-action-get-changed-files@2.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Label added files
+        if: steps.files.outputs.added != ''
+        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-added"
+
+      - name: Label modified files
+        if: steps.files.outputs.modified != '' || steps.files.outputs.renamed != ''
+        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-modified"
+
+      - name: Label removed files
+        if: steps.files.outputs.removed != ''
+        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-deleted"
