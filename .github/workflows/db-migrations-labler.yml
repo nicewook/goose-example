@@ -25,26 +25,40 @@ jobs:
             deleted:
               - deleted: 'db/migrations/**/*.sql'
 
-      - name: Label added files
+      - name: Add label for added files
         if: steps.files.outputs.added == 'true'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-added"
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: db-migration-added
 
-      - name: Label modified files
+      - name: Add label for modified files
         if: steps.files.outputs.modified == 'true'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-modified"
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: db-migration-modified
 
-      - name: Label deleted files
+      - name: Add label for deleted files
         if: steps.files.outputs.deleted == 'true'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-deleted"
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: db-migration-deleted
 
-#  auto-labeler:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Auto Labeler
-#        id: labeler
-#        uses: jimschubert/labeler-action@v2
-#        with:
-#          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+#      - name: Label added files
+#        if: steps.files.outputs.added == 'true'
+#        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-added"
+#
+#      - name: Label modified files
+#        if: steps.files.outputs.modified == 'true'
+#        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-modified"
+#
+#      - name: Label deleted files
+#        if: steps.files.outputs.deleted == 'true'
+#        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "db-migration-deleted"
+
+
 
   conventional-labeler:
     runs-on: ubuntu-latest
